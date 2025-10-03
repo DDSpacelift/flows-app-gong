@@ -74,6 +74,14 @@ export async function callGongApi(
     throw new Error(`Gong API error: ${response.status} ${errorText}`);
   }
 
+  const contentType = response.headers.get("content-type");
+  if (!contentType || !contentType.includes("application/json")) {
+    const text = await response.text();
+    throw new Error(
+      `Gong API returned non-JSON response. URL: ${url}, Content-Type: ${contentType}, Body preview: ${text.substring(0, 200)}`,
+    );
+  }
+
   return response.json();
 }
 
@@ -85,16 +93,18 @@ async function refreshGongToken(
 ): Promise<{ accessToken: string; refreshToken: string } | null> {
   const tokenUrl = "https://app.gong.io/oauth2/generate-customer-token";
 
+  // Gong requires Basic Authentication with clientId:clientSecret
+  const credentials = btoa(`${config.clientId}:${config.clientSecret}`);
+
   const response = await fetch(tokenUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${credentials}`,
     },
     body: new URLSearchParams({
       grant_type: "refresh_token",
       refresh_token: config.refreshToken,
-      client_id: config.clientId,
-      client_secret: config.clientSecret,
     }),
   });
 
@@ -123,16 +133,18 @@ export async function exchangeCodeForTokens(
 ): Promise<{ accessToken: string; refreshToken: string }> {
   const tokenUrl = "https://app.gong.io/oauth2/generate-customer-token";
 
+  // Gong requires Basic Authentication with clientId:clientSecret
+  const credentials = btoa(`${clientId}:${clientSecret}`);
+
   const response = await fetch(tokenUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${credentials}`,
     },
     body: new URLSearchParams({
       grant_type: "authorization_code",
       code,
-      client_id: clientId,
-      client_secret: clientSecret,
       redirect_uri: redirectUri,
     }),
   });

@@ -32,13 +32,19 @@ export const getCallTranscript: AppBlock = {
           );
         }
 
+        // Ensure correct API base URL (not app.gong.io)
+        let apiBaseUrl =
+          (input.app.config.baseUrl as string) || "https://api.gong.io";
+        if (apiBaseUrl.includes("app.gong.io")) {
+          apiBaseUrl = apiBaseUrl.replace("app.gong.io", "api.gong.io");
+        }
+
         const apiConfig = {
           accessToken: accessToken.value,
           refreshToken: refreshToken.value,
           clientId: input.app.config.clientId as string,
           clientSecret: input.app.config.clientSecret as string,
-          baseUrl:
-            (input.app.config.baseUrl as string) || "https://api.gong.io",
+          baseUrl: apiBaseUrl,
         };
 
         const transcriptData = await callGongApi(

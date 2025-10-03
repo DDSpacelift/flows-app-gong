@@ -9,7 +9,7 @@ import {
 export const app = defineApp({
   name: "Gong",
   installationInstructions:
-    "Integrate with Gong's revenue intelligence platform to automate sales call analysis, transcripts, and insights.\n\nTo install:\n1. Enter your Gong OAuth Client ID and Client Secret\n2. Follow the OAuth authorization flow\n3. Optionally configure webhook secret for real-time events",
+    "Integrate with Gong's revenue intelligence platform to automate sales call analysis, transcripts, and insights.\n\nTo install:\n1. Enter your Gong OAuth Client ID and Client Secret\n2. Leave the Gong API Base URL as default (https://api.gong.io) or use https://eu-api.gong.io for EU instances\n3. Follow the OAuth authorization flow\n4. Optionally configure webhook secret for real-time events",
 
   config: {
     clientId: {
@@ -42,7 +42,8 @@ export const app = defineApp({
     },
     baseUrl: {
       name: "Gong API Base URL",
-      description: "Base URL for Gong API",
+      description:
+        "Base URL for Gong API (use https://api.gong.io or https://eu-api.gong.io for EU)",
       type: "string",
       required: false,
       default: "https://api.gong.io",
@@ -131,19 +132,28 @@ export const app = defineApp({
     if (finalAccessToken && finalRefreshToken) {
       // Validate token by calling Gong API
       try {
+        // Ensure correct API base URL (not app.gong.io)
+        let apiBaseUrl = (baseUrl as string) || "https://api.gong.io";
+        if (apiBaseUrl.includes("app.gong.io")) {
+          apiBaseUrl = apiBaseUrl.replace("app.gong.io", "api.gong.io");
+        }
+
         const apiConfig = {
           accessToken: finalAccessToken,
           refreshToken: finalRefreshToken,
           clientId: clientId as string,
           clientSecret: clientSecret as string,
-          baseUrl: (baseUrl as string) || "https://api.gong.io",
+          baseUrl: apiBaseUrl,
         };
 
-        const usersResponse = await callGongApi("/users", apiConfig);
+        // List users to validate token
+        const usersResponse = await callGongApi("/users", apiConfig, {
+          method: "GET",
+        });
 
-        // Extract user info
+        // Extract user info from response
         const users = usersResponse.users || [];
-        const currentUser = users.find((u: any) => u.emailAddress);
+        const currentUser = users.length > 0 ? users[0] : null;
 
         if (currentUser) {
           // Delete OAuth prompt if exists
