@@ -1,4 +1,7 @@
 {
+  "name": "flows-app-gong",
+  "version": "1.0.0",
+  "description": "Gong integration for Spacelift Flows - read-only access to call data, transcripts, and user information",
   "type": "module",
   "dependencies": {
     "@slflows/sdk": "^0.0.7",
